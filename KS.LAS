@@ -16,7 +16,7 @@ CNTY.                     : COUNTY
 STAT.                     : STATE
 CTRY.                     : COUNTRY
 SRVC.     BUGR OAO TNGF   : SERVICE COMPANY
-DATE.       1 11 2009     : DATE
+DATE       1 11 2009     : DATE
 TIME.         9 28 0       : DATE TIME
 API.                      : API NUMBER
 ~Curve information

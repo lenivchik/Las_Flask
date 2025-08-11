@@ -1,13 +1,12 @@
 const VERSION = 'v1';
 const CACHE_NAME = `las-validator-${VERSION}`;
 const PRECACHE_URLS = [
-  '/', // Главная страница, генерируемая Flask
+  '/', 
   '/static/manifest.json',
   '/static/css/styles.css',
   '/static/assets/favicon.ico'
 ];
 
-// Установка: кешируем необходимые ресурсы
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -16,7 +15,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Активация: удаляем старые кеши
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -29,7 +27,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Фетч: кэш с обновлением из сети
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 

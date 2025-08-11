@@ -10,7 +10,6 @@ const validationSummary = document.getElementById('validation-summary');
 const validationDetails = document.getElementById('validation-details');
 const filePreview = document.getElementById('file-preview');
 
-// Обработка выбора файла
 fileInput.addEventListener('change', () => {
   const file = fileInput.files[0];
   if (file) {

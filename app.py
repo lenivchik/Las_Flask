@@ -22,13 +22,14 @@ def validate():
         return jsonify({'error': 'Допускаются только LAS файлы'}), 400
     
 
-    # читаем содержимое файла
-    # file_content = file.read().decode('utf-8', errors='replace')
     file_content = file.read().decode('utf-8', errors='replace')
-    # file_like = StringIO(file_content)
-    # вызываем функцию валидации
-    las = lascheck.read(file_content)
-    error = las.get_non_conformities()
+    error=[]
+    try:
+        las = lascheck.read(file_content)
+        error = las.get_non_conformities()
+    except Exception as e:
+        print(e)
+        error.append(str(e))
     results = {
                 "summary": "Файл проверен",
                 "errors": error,
