@@ -28,7 +28,7 @@ def validate():
         las = lascheck.read(file_content)
         error = las.get_non_conformities()
     except Exception as e:
-        print(e)
+        # print(e)
         error.append(str(e))
     results = {
                 "summary": "Файл проверен",

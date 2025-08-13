@@ -31,11 +31,6 @@ fileInput.addEventListener('change', () => {
 validateBtn.addEventListener('click', () => {
   const file = fileInput.files[0];
 
-  console.log("Отправляемый файл:", {
-  name: file.name,
-  size: file.size + " bytes",
-  type: file
-});
 
   if (!file) return;
 
