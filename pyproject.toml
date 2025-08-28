@@ -1,0 +1,21 @@
+[project]
+name = "test-flask"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Amir"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "flask (>=3.1.2,<4.0.0)",
+    "lascheck @ file:///mnt/c/Users/galie/OneDrive/%D0%A0%D0%B0%D0%B1%D0%BE%D1%87%D0%B8%D0%B9%20%D1%81%D1%82%D0%BE%D0%BB/%D0%A2%D0%9D%D0%93/NTU/lascheck-master"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+lascheck = {develop = true}

@@ -17,7 +17,7 @@ STAT.                     : STATE
 CTRY.                     : COUNTRY
 SRVC.     BUGR OAO TNGF   : SERVICE COMPANY
 DATE.       1 11 2009     : DATE
-TIME.         9 28 0       : DATE TIME
+TIME         9 28 0       : DATE TIME
 API.                      : API NUMBER
 ~Curve information
 # MNEM.UNIT  API CODE       CURVE DESCRIPTION
@@ -30,7 +30,8 @@ KS     .                  :
 #==.======================:====================
 ~Other information
 #-------------- REMARKS AREA ------------------
-REDACT                                                                       
+REDACT                                          
+
 #==============================================
 ~A
 297.1      0.02

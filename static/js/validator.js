@@ -24,7 +24,7 @@ fileInput.addEventListener('change', () => {
       filePreview.textContent = text
       // .split('\n').slice(0, 30).join('\n');
     };
-    reader.readAsText(file, 'utf-8');
+    reader.readAsText(file, 'CP1251');
   }
 });
 
@@ -55,7 +55,7 @@ validateBtn.addEventListener('click', () => {
       if (data.valid) {
         validationSummary.innerHTML = `
           <div class="alert alert-success">
-            <i class="bi bi-check-circle me-2"></i>Файл прошёл проверку без ошибок.
+            <i class="bi bi-check-circle me-2"></i>Файл прошёл проверку без ошибок.   
           </div>`;
         validationDetails.innerHTML = '';
       } else {
