@@ -1,21 +1,42 @@
-[project]
-name = "test-flask"
+[tool.poetry]
+name = "las-validator-app"
 version = "0.1.0"
-description = ""
-authors = [
-    {name = "Amir"}
-]
+description = "Professional LAS file validator with Flask web interface"
+authors = ["НТУ АСОИГИС <your-email@example.com>"]
 readme = "README.md"
-requires-python = ">=3.10"
-dependencies = [
-    "flask (>=3.1.2,<4.0.0)",
-    "lascheck @ file:///mnt/c/Users/galie/OneDrive/%D0%A0%D0%B0%D0%B1%D0%BE%D1%87%D0%B8%D0%B9%20%D1%81%D1%82%D0%BE%D0%BB/%D0%A2%D0%9D%D0%93/NTU/lascheck-master"
-]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+packages = [{include = "app"}]
 
 [tool.poetry.dependencies]
-lascheck = {develop = true}
+python = "^3.10"
+flask = "^3.1.1"
+gunicorn = "^21.2.0"
+werkzeug = "^3.1.3"
+jinja2 = "^3.1.6"
+markupsafe = "^3.0.2"
+click = "^8.2.1"
+blinker = "^1.9.0"
+itsdangerous = "^2.2.0"
+# Local lascheck package - based on your poetry.lock, it's in ../lascheck-master
+# But for Docker, we need it to be ./lascheck, so copy it there
+lascheck = {path = "./lascheck", develop = true, optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+black = "^23.0.0"
+flake8 = "^6.0.0"
+mypy = "^1.5.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
