@@ -27,21 +27,6 @@ services:
     networks:
       - las-network
 
-  # Optional: Add nginx reverse proxy
-  nginx:
-    image: nginx:alpine
-    container_name: las-validator-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro  # Optional: for SSL certificates
-    depends_on:
-      - las-validator
-    restart: unless-stopped
-    networks:
-      - las-network
 
 networks:
   las-network:

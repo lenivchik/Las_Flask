@@ -71,62 +71,46 @@ set_permissions() {
     print_status "Permissions set successfully."
 }
 
-# Check if Poetry and lascheck are available
-check_poetry() {
-    print_status "Checking Poetry and local lascheck..."
+# Update requirements.txt with gunicorn
+update_requirements() {
+    print_status "Checking requirements.txt..."
     
-    if ! command -v poetry &> /dev/null; then
-        print_error "Poetry is not installed. Installing Poetry..."
-        curl -sSL https://install.python-poetry.org | python3 -
-        export PATH="$HOME/.local/bin:$PATH"
-        
-        if ! command -v poetry &> /dev/null; then
-            print_error "Failed to install Poetry. Please install it manually."
-            print_info "Visit: https://python-poetry.org/docs/#installation"
-            exit 1
-        fi
+    if ! grep -q "gunicorn" requirements.txt; then
+        print_warning "Adding gunicorn to requirements.txt..."
+        echo "gunicorn==21.2.0" >> requirements.txt
+        print_status "Gunicorn added to requirements."
     fi
-    
-    # Check if lascheck directory exists
-    if [ ! -d "lascheck" ]; then
-        print_warning "Local lascheck directory not found."
-        print_info "Please ensure you have the lascheck package in the 'lascheck/' directory"
-        print_info "Structure should be:"
-        print_info "  ."
-        print_info "  ├── lascheck/"
-        print_info "  │   ├── __init__.py"
-        print_info "  │   ├── ..."
-        print_info "  └── pyproject.toml"
-        
-        read -p "Do you want to continue anyway? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
-    else
-        print_status "✅ Local lascheck directory found."
-    fi
-    
-    print_status "Poetry setup complete."
-}
-
-# Create Poetry configuration
-setup_poetry() {
-    print_status "Setting up Poetry configuration..."
-    
-    # Create poetry.lock if it doesn't exist
-    if [ ! -f "poetry.lock" ]; then
-        print_status "Creating poetry.lock..."
-        poetry lock
-    fi
-    
-    print_status "Poetry configuration ready."
 }
 
 # Build and start the application
 build_and_start() {
     print_status "Building Docker images..."
-    docker-compose build
+    
+    # Try main Dockerfile first
+    if docker-compose build 2>/dev/null; then
+        print_status "✅ Main Dockerfile build successful!"
+    else
+        print_warning "Main Dockerfile failed, trying simple version..."
+        
+        # Update docker-compose to use simple dockerfile
+        sed -i 's/dockerfile: Dockerfile$/dockerfile: Dockerfile.simple/' docker-compose.yml
+        
+        if docker-compose build 2>/dev/null; then
+            print_status "✅ Simple Dockerfile build successful!"
+        else
+            print_warning "Simple Dockerfile failed, trying fallback version..."
+            
+            # Update docker-compose to use fallback dockerfile
+            sed -i 's/dockerfile: Dockerfile.simple$/dockerfile: Dockerfile.fallback/' docker-compose.yml
+            
+            if docker-compose build; then
+                print_status "✅ Fallback Dockerfile build successful!"
+            else
+                print_error "❌ All Dockerfile variants failed. Please check your lascheck package structure."
+                exit 1
+            fi
+        fi
+    fi
     
     print_status "Starting LAS Validator application..."
     docker-compose up -d
@@ -177,10 +161,8 @@ main() {
     echo -e "${NC}"
     
     check_docker
-    check_poetry
     create_directories
     set_permissions
-    setup_poetry
     build_and_start
     show_info
 }
