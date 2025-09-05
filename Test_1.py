@@ -65,31 +65,13 @@ def validate_las_file_detailed(file_path: str, **kwargs) -> Dict[str, Any]:
         Dict containing detailed validation results
     """
     errors = []
-    warnings = []
-    info = []
-    
+    warnings = []    
     try:
-        # Read the LAS file
-        las_file = lascheck.read(file_path, **kwargs)
-        
-        # Get basic file information
-        try:
-            version = las_file.version["VERS"].value if "VERS" in las_file.version else "Unknown"
-            info.append(f"LAS version: {version}")
-        except:
-            warnings.append("Could not determine LAS version")
-        
-        try:
-            well_name = las_file.well["WELL"].value if "WELL" in las_file.well else "Unknown"
-            info.append(f"Well name: {well_name}")
-        except:
-            pass
-        
+       las_file=lascheck.read(file_path,**kwargs)     
         # Get all non-conformities
-        non_conformities = las_file.get_non_conformities()
-        
+       non_conformities = las_file.get_non_conformities()
         # Categorize errors by severity
-        for error in non_conformities:
+       for error in non_conformities:
             error_lower = error.lower()
             if any(keyword in error_lower for keyword in ['missing mandatory', 'invalid index mnemonic']):
                 errors.append(error)
@@ -99,11 +81,11 @@ def validate_las_file_detailed(file_path: str, **kwargs) -> Dict[str, Any]:
                 errors.append(error)  # Default to error for unknown issues
         
         # Additional checks
-        try:
+       try:
             if hasattr(las_file, 'curves') and len(las_file.curves) == 0:
                 errors.append("No curves found in file")
-        except:
-            pass
+       except:
+           pass
             
     except FileNotFoundError:
         errors.append(f"File not found: {file_path}")
@@ -124,9 +106,6 @@ def validate_las_file_detailed(file_path: str, **kwargs) -> Dict[str, Any]:
         "valid": len(all_errors) == 0
     }
     
-    # Add extra info for debugging (optional)
-    if info:
-        results["info"] = info
     
     return results
 

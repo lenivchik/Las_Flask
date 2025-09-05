@@ -10823,6 +10823,58 @@ textarea.form-control-lg {
   .d-print-none {
     display: none !important;
   }
+  #file-preview.expanded {
+    max-height: 600px !important;
+}
+.border-dashed {
+    border-style: dashed !important;
+    border-width: 2px !important;
+    transition: all 0.3s ease;
+}
+
+#upload-zone.border-primary {
+    border-color: var(--bs-primary) !important;
+}
+
+#upload-zone {
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#upload-zone:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+    transform: scale(1.02);
+}
+
+.toast-container {
+    z-index: 1050;
+}
+
+/* Spinner animation for validate button */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* File info styling */
+#file-info {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
 }
 html {
   scroll-padding-top: 3.5rem;

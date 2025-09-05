@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Профессиональный валидатор LAS файлов с детальной проверкой стандартов LAS 2.0" />
+    <meta name="author" content="НТУ АСОИГИС" />
+    <meta name="keywords" content="LAS, валидатор, каротаж, нефть, газ, скважина" />
+    <title>LAS Валидатор | Профессиональная проверка файлов</title>
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href=" {{ url_for('static', filename='manifest.json') }}"> 
+    <!-- <link rel="manifest" href="../static/manifest.json"> -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="LAS Validator">
+    <meta name="apple-mobile-web-app-title" content="LAS Validator">
+    <meta name="theme-color" content="#154dd5">
+    <meta name="msapplication-navbutton-color" content="#154dd5">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Icons -->
+    <link rel="shortcut icon" href=" {{ url_for('static', filename='assets/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href=" {{ url_for('static', filename='assets/favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href=" {{ url_for('static', filename='assets/android-chrome-192x192.png') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href=" {{ url_for('static', filename='css/styles.css') }}" />
+</head>
+
+<body id="page-top" data-bs-spy="scroll" data-bs-target="#mainNav" data-bs-offset="74">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#page-top">
+                <i class="bi bi-file-earmark-text me-2"></i>LAS Валидатор
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
+                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Переключить навигацию">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#about">О программе</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#features">Возможности</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#validator">Проверка</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#help">Справка</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Контакты</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-primary bg-gradient text-white py-5" style="margin-top: 56px;">
+        <div class="container py-5">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold mb-4">Профессиональный LAS Валидатор</h1>
+                    <p class="lead mb-4">Быстрая и точная проверка файлов LAS 2.0 на соответствие стандартам каротажа
+                        скважин</p>
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <span class="badge bg-light text-dark px-3 py-2"><i class="bi bi-check-circle me-1"></i>LAS
+                            2.0</span>
+                        <span class="badge bg-light text-dark px-3 py-2"><i
+                                class="bi bi-lightning me-1"></i>Быстро</span>
+                        <span class="badge bg-light text-dark px-3 py-2"><i
+                                class="bi bi-shield-check me-1"></i>Надежно</span>
+                    </div>
+                    <a class="btn btn-lg btn-light px-4 py-2" href="#validator">
+                        <i class="bi bi-play-fill me-2"></i>Начать проверку
+                    </a>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <i class="bi bi-file-earmark-code display-1 opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="text-center mb-5">
+                        <h2 class="display-5 fw-bold">О программе</h2>
+                        <p class="lead text-muted">Комплексная проверка LAS файлов по всем стандартам</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-gear text-primary fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Автоматическая проверка</h5>
+                                    <p class="text-muted">Проверка структуры файла, обязательных секций и параметров</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-clipboard-data text-primary fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Детальный анализ</h5>
+                                    <p class="text-muted">Подробный отчет о найденных ошибках и рекомендации</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-download text-primary fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Экспорт результатов</h5>
+                                    <p class="text-muted">Сохранение отчета в различных форматах</p>
+                                </div>
+                            </div>
+                        </div> -->
+                        <!-- <div class="col-md-6">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-shield-check text-primary fs-3"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5>Безопасность</h5>
+                                    <p class="text-muted">Обработка файлов происходит локально в браузере</p>
+                                </div>
+                            </div>
+                        </div> -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold">Проверяемые параметры</h2>
+                <p class="lead text-muted">Полный список валидационных правил LAS 2.0</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-list-ol text-primary display-6"></i>
+                            </div>
+                            <h5 class="card-title text-center">Структура разделов</h5>
+                            <ul class="list-unstyled small">
+                                <li><i class="bi bi-check text-success me-2"></i>Обязательные разделы ~V, ~W, ~C, ~A
+                                </li>
+                                <li><i class="bi bi-check text-success me-2"></i>Правильная последовательность</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Уникальность разделов</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Отсутствие пустых строк</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-info-circle text-primary display-6"></i>
+                            </div>
+                            <h5 class="card-title text-center">Информация о скважине</h5>
+                            <ul class="list-unstyled small">
+                                <li><i class="bi bi-check text-success me-2"></i>STRT, STOP, STEP, NULL</li>
+                                <li><i class="bi bi-check text-success me-2"></i>COMP, WELL, FLD, LOC</li>
+                                <li><i class="bi bi-check text-success me-2"></i>SRVC, DATE</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Корректность единиц измерения</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6">
+                    <div class="card h-100 border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-graph-up text-primary display-6"></i>
+                            </div>
+                            <h5 class="card-title text-center">Кривые каротажа</h5>
+                            <ul class="list-unstyled small">
+                                <li><i class="bi bi-check text-success me-2"></i>Индексная кривая
+                                    (DEPT/DEPTH/TIME/INDEX)</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Единицы измерения глубины (M/F/FT)</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Структура данных</li>
+                                <li><i class="bi bi-check text-success me-2"></i>Целостность массива данных</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Validator Section -->
+<section id="validator" class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="text-center mb-5">
+                    <h2 class="display-5 fw-bold">Проверка файла</h2>
+                    <p class="lead text-muted">Загрузите ваш LAS файл для проверки</p>
+                </div>
+
+                <!-- Upload Zone -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div id="upload-zone" class="border-2 border-dashed rounded p-5 text-center bg-light">
+                            <i class="bi bi-cloud-upload display-4 text-muted mb-3"></i>
+                            <h5>Перетащите файл сюда или нажмите для выбора</h5>
+                            <p class="text-muted mb-3">Поддерживаются файлы .las до 10 МБ</p>
+                            <input type="file" id="las-file" class="d-none" accept=".las" />
+                            <button type="button" class="btn btn-primary" id="select-file-btn">
+                                <i class="bi bi-folder2-open me-2"></i>Выбрать файл
+                            </button>
+                        </div>
+
+                        <!-- File Info -->
+                        <div id="file-info" class="mt-3" style="display: none;">
+                            <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                                <div class="d-flex align-items-center flex-grow-1">
+                                    <i class="bi bi-file-earmark-text text-primary fs-3 me-3"></i>
+                                    <div>
+                                        <div class="fw-semibold" id="file-name"></div>
+                                        <div class="d-flex gap-3">
+                                            <small class="text-muted" id="file-size"></small>
+                                            <small class="text-muted" id="file-date"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="clear-file-btn" title="Очистить файл">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="validate-btn">
+                                        <i class="bi bi-play-fill me-2"></i>Проверить
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress -->
+                        <div id="progress-container" class="mt-3" style="display: none;">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                                <span>Проверка файла...</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                    role="progressbar" style="width: 0%" id="progress-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="results-container" style="display: none;">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clipboard-check me-2"></i>Результаты проверки
+                            </h5>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="new-check-btn" title="Новая проверка">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Новая проверка
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="export-json">
+                                    <i class="bi bi-filetype-json me-1"></i>JSON
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="export-txt">
+                                    <i class="bi bi-filetype-txt me-1"></i>TXT
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <!-- Summary -->
+                            <div id="validation-summary" class="mb-4"></div>
+
+                            <!-- Detailed Results -->
+                            <div id="validation-details"></div>
+
+                            <!-- File Preview -->
+                            <div class="mt-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Превью файла</h6>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('file-preview').classList.toggle('expanded')" title="Развернуть/Свернуть">
+                                        <i class="bi bi-arrows-expand"></i>
+                                    </button>
+                                </div>
+                                <pre id="file-preview" class="bg-dark text-light p-3 rounded small"
+                                    style="max-height: 300px; overflow-y: auto;"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Help Section -->
+    <section id="help" class="py-5 bg-light">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="text-center mb-5">
+                        <h2 class="display-5 fw-bold">Справочная информация</h2>
+                        <p class="lead text-muted">Детальное описание проверяемых параметров</p>
+                    </div>
+
+                    <div class="accordion" id="helpAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#section-structure">
+                                    <i class="bi bi-list-ol me-2"></i>Структура разделов
+                                </button>
+                            </h2>
+                            <div id="section-structure" class="accordion-collapse collapse show"
+                                data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">Раздел "~V" должен быть первым и содержать VERS,
+                                            WRAP</li>
+                                        <li class="list-group-item">Раздел "~W" (WELL INFORMATION) является обязательным
+                                        </li>
+                                        <li class="list-group-item">Раздел "~C" (CURVE INFORMATION) является
+                                            обязательным</li>
+                                        <li class="list-group-item">Раздел "~A" (ASCII LOG DATA) является обязательным и
+                                            последним</li>
+                                        <li class="list-group-item">В LAS 2.0 каждый раздел может встречаться только
+                                            один раз</li>
+                                        <li class="list-group-item">Внутренние пустые строки в разделах запрещены</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#well-info">
+                                    <i class="bi bi-info-circle me-2"></i>Информация о скважине
+                                </button>
+                            </h2>
+                            <div id="well-info" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <p>Раздел ~W должен содержать следующие обязательные параметры:</p>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item"><strong>STRT</strong> - начальная глубина/время</li>
+                                        <li class="list-group-item"><strong>STOP</strong> - конечная глубина/время</li>
+                                        <li class="list-group-item"><strong>STEP</strong> - шаг записи</li>
+                                        <li class="list-group-item"><strong>NULL</strong> - значение пропуска</li>
+                                        <li class="list-group-item"><strong>COMP</strong> - компания</li>
+                                        <li class="list-group-item"><strong>WELL</strong> - название скважины</li>
+                                        <li class="list-group-item"><strong>FLD</strong> - месторождение</li>
+                                        <li class="list-group-item"><strong>LOC</strong> - местоположение</li>
+                                        <li class="list-group-item"><strong>SRVC</strong> - сервисная компания</li>
+                                        <li class="list-group-item"><strong>DATE</strong> - дата каротажа</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#curve-info">
+                                    <i class="bi bi-graph-up me-2"></i>Кривые каротажа
+                                </button>
+                            </h2>
+                            <div id="curve-info" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                                <div class="accordion-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">Индексная кривая (первая) должна быть глубиной,
+                                            временем или индексом</li>
+                                        <li class="list-group-item">Допустимые мнемоники: DEPT, DEPTH, TIME, INDEX</li>
+                                        <li class="list-group-item">Для глубины единицы измерения: M (метры) или F/FT
+                                            (футы)</li>
+                                        <li class="list-group-item">Время и дата должны быть выражены числом в LAS 2.0
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="text-center mb-5">
+                        <h2 class="display-5 fw-bold">Свяжитесь с нами</h2>
+                        <p class="lead text-muted">Есть вопросы или предложения по улучшению валидатора?</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-envelope text-primary display-5"></i>
+                            </div>
+                            <h5>Email</h5>
+                            <p class="text-muted">xxxxx@tng.ru</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-telephone text-primary display-5"></i>
+                            </div>
+                            <h5>Телефон</h5>
+                            <p class="text-muted">+7 (xxx) xxx-xx-xx</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="mb-3">
+                                <i class="bi bi-geo-alt text-primary display-5"></i>
+                            </div>
+                            <h5>Адрес</h5>
+                            <p class="text-muted">г. Бугульма, НТУ АСОИГИС</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4 bg-dark text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0">&copy; 2025 НТУ АСОИГИС.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="text-muted">Версия 0.0.1 | LAS Validator</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <button class="btn btn-primary position-fixed bottom-0 end-0 m-3 rounded-circle d-none" 
+            id="scroll-top" style="width: 50px; height: 50px;">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    
+<!-- href=" {{ url_for('static', filename='assets/favicon.ico') }}" -->
+    <script src="{{ url_for('static', filename='js/validator.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/setupDragAndDrop.js') }}"></script>
+<!-- 
+    <script src="../static/js/validator.js"></script>
+    <script src="../static/js/setupDragAndDrop.js"></script> -->
+
+</body>
+
+</html>

@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return render_template('index_2.html')
+    return render_template('index_3.html')
 
 @app.route('/validate', methods=['POST'])
 def validate():
