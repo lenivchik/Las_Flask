@@ -167,7 +167,7 @@ class ValidMnemonicCharacters(Rule):
             return True
         
         for curve in las_file.curves:
-            if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.mnemonic):
+            if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.original_mnemonic):
                 return False
         return True
     
@@ -201,12 +201,14 @@ class ValidMnemonicCharacters(Rule):
         # Check curves
         if "Curves" in las_file.sections:
             for i, curve in enumerate(las_file.curves):
-                if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.mnemonic):
-                    special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(curve.mnemonic)
+                if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.original_mnemonic):
+                    line_num = getattr(curve, 'line_number', None)
+                    special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(curve.original_mnemonic)
                     invalid.append({
                         'section': '~C',
                         'index': i + 1,
-                        'mnemonic': curve.mnemonic,
+                        'line_number': line_num,
+                        'mnemonic': curve.original_mnemonic,
                         'special_chars': special_chars,
                         'type': 'curve'
                     })
@@ -215,10 +217,12 @@ class ValidMnemonicCharacters(Rule):
         if "Well" in las_file.sections:
             for item in las_file.well:
                 if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
+                    line_num = getattr(item, 'line_number', None)
                     special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(item.mnemonic)
                     invalid.append({
                         'section': '~W',
                         'mnemonic': item.mnemonic,
+                        'line_number': line_num,
                         'special_chars': special_chars,
                         'type': 'well'
                     })
@@ -228,9 +232,11 @@ class ValidMnemonicCharacters(Rule):
             for item in las_file.params:
                 if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
                     special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(item.mnemonic)
+                    line_num = getattr(item, 'line_number', None)                    
                     invalid.append({
                         'section': '~P',
                         'mnemonic': item.mnemonic,
+                        'line_number': line_num,                        
                         'special_chars': special_chars,
                         'type': 'parameter'
                     })
@@ -276,19 +282,23 @@ class NoHashInMnemonics(Rule):
         if "Curves" in las_file.sections:
             for i, curve in enumerate(las_file.curves):
                 if '#' in curve.mnemonic:
+                    line_num = getattr(curve, 'line_number', None)
                     mnemonics_with_hash.append({
                         'section': '~C',
                         'index': i + 1,
+                        'line_number': line_num,                    
                         'mnemonic': curve.mnemonic,
                         'type': 'curve'
                     })
-        
+                    
         # Check well section
         if "Well" in las_file.sections:
             for item in las_file.well:
                 if '#' in item.mnemonic:
+                    line_num = getattr(item, 'line_number', None)
                     mnemonics_with_hash.append({
                         'section': '~W',
+                        'line_number': line_num,
                         'mnemonic': item.mnemonic,
                         'type': 'well'
                     })
@@ -297,8 +307,10 @@ class NoHashInMnemonics(Rule):
         if "Parameter" in las_file.sections:
             for item in las_file.params:
                 if '#' in item.mnemonic:
+                    line_num = getattr(item, 'line_number', None)
                     mnemonics_with_hash.append({
                         'section': '~P',
+                        'line_number': line_num,
                         'mnemonic': item.mnemonic,
                         'type': 'parameter'
                     })
