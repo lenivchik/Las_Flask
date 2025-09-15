@@ -6,7 +6,6 @@ import logging
 import re
 
 # get basestring in py3
-
 try:
     unicode = unicode
 except NameError:
@@ -16,11 +15,8 @@ except NameError:
 else:
     # 'unicode' exists, must be Python 2
     bytes = str
-    # basestring = basestring
-
 
 # internal lascheck imports
-
 from . import exceptions
 from .las_items import HeaderItem, CurveItem, SectionItems, OrderedDict
 from . import defaults
@@ -28,8 +24,6 @@ from . import reader
 from . import spec
 
 logger = logging.getLogger(__name__)
-
-
 
 ERROR_MESSAGES = {
     "No ~ sections found. Is this a LAS file?": "Не найдены секции (~). Это действительно LAS-файл?",
@@ -51,7 +45,11 @@ ERROR_MESSAGES = {
     "VERS item not found in the ~V section.": "Элемент VERS не найден в секции ~V",
     "WRAP item not found in the ~V section": "Элемент WRAP не найден в секции ~V",
     "Header error in": "Ошибка заголовка в",
-    "Section having blank line":"Пустые строки в секции"
+    "Section having blank line": "Пустые строки в секции",
+    "Invalid characters in mnemonic": "Недопустимые символы в мнемонике",
+    "Hash character (#) in mnemonic": "Символ решётка (#) в мнемонике",
+    "Mnemonic does not start with letter": "Мнемоника не начинается с буквы",
+    "Duplicate curve mnemonics found": "Обнаружены дублирующиеся мнемоники кривых",
 
 }
 
@@ -62,12 +60,7 @@ def tr(msg):
     return ERROR_MESSAGES.get(msg, msg)
 
 
-
-
-
-
 class LASFile(object):
-
     """LAS file object.
 
     Keyword Arguments:
@@ -103,6 +96,13 @@ class LASFile(object):
         self.blank_line_in_section = False
         self.sections_with_blank_line = []
         self.non_conforming_depth = []
+        self.duplicate_curves = []
+        
+        # New attributes for special character tracking
+        self.invalid_mnemonics = []
+        self.mnemonics_with_hash = []
+        self.mnemonics_with_invalid_start = []
+        
         default_items = defaults.get_default_items()
         if not (file_ref is None):
             self.sections = {}
@@ -176,11 +176,7 @@ class LASFile(object):
                 )
                 drop.append(raw_section["title"])
             else:
-                # logger.warning(
-                #     "Header section %s regexp=%s was not found." % (name, pattern)
-                # )
                 logger.warning(tr(f"Header section {name} regexp={pattern} was not found."))
-
 
             for key in drop:
                 self.raw_sections.pop(key)
@@ -192,11 +188,7 @@ class LASFile(object):
                 self.sections[name] = "\n".join(raw_section["lines"])
                 drop.append(raw_section["title"])
             else:
-                # logger.warning(
-                #     "Header section %s regexp=%s was not found." % (name, pattern)
-                # )
                 logger.warning(tr(f"Header section {name} regexp={pattern} was not found."))
-
 
             for key in drop:
                 self.raw_sections.pop(key)
@@ -214,7 +206,6 @@ class LASFile(object):
             self.non_conformities.append(tr("Duplicate v section"))
 
         # Establish version and wrap values if possible.
-
         try:
             version = self.version["VERS"].value
         except KeyError:
@@ -228,13 +219,6 @@ class LASFile(object):
             wrap = None
 
         # Validate version.
-        #
-        # If VERS was missing and version = None, then the file will be read in
-        # as if version were 2.0. But there will be no VERS HeaderItem, meaning
-        # that las.write(..., version=None) will fail with a KeyError. But
-        # las.write(..., version=1.2) will work because a new VERS HeaderItem
-        # will be created.
-
         try:
             assert version in (1.2, 2, None)
         except AssertionError:
@@ -260,7 +244,6 @@ class LASFile(object):
             self.non_conformities.append(tr("Duplicate w section"))
 
         # Establish NULL value if possible.
-
         try:
             null = self.well["NULL"].value
         except KeyError:
@@ -291,7 +274,6 @@ class LASFile(object):
             self.duplicate_p_section = True
             self.non_conformities.append(tr("Duplicate p section"))
 
-
         add_special_section("~A", "Ascii")
 
         add_special_section("~O", "Other")
@@ -299,8 +281,7 @@ class LASFile(object):
             self.duplicate_o_section = True
             self.non_conformities.append(tr("Duplicate o section"))
 
-        # Deal with nonstandard sections that some operators and/or
-        # service companies (eg IHS) insist on adding.
+        # Deal with nonstandard sections
         drop = []
         for s in self.raw_sections.values():
             if s["section_type"] == "header":
@@ -329,21 +310,7 @@ class LASFile(object):
                     self.index_unit = index_unit
 
     def match_raw_section(self, pattern, re_func="match", flags=re.IGNORECASE):
-        """Find raw section with a regular expression.
-
-            Arguments:
-                pattern (str): regular expression (you need to include the tilde)
-
-            Keyword Arguments:
-                re_func (str): either "match" or "search", see python ``re`` module.
-                flags (int): flags for :func:`re.compile`
-
-            Returns:
-                dict
-
-            Intended for internal use only.
-
-        """
+        """Find raw section with a regular expression."""
         for title in self.raw_sections.keys():
             title = title.strip()
             p = re.compile(pattern, flags=flags)
@@ -356,30 +323,13 @@ class LASFile(object):
                 return self.raw_sections[title]
 
     def get_curve(self, mnemonic):
-        """Return CurveItem object.
-
-        Arguments:
-            mnemonic (str): the name of the curve
-
-        Returns:
-            :class:`lascheck.las_items.CurveItem` (not just the data array)
-
-        """
+        """Return CurveItem object."""
         for curve in self.curves:
             if curve.mnemonic == mnemonic:
                 return curve
 
     def __getitem__(self, key):
-        """Provide access to curve data.
-
-        Arguments:
-            key (str, int): either a curve mnemonic or the column index.
-
-        Returns:
-            1D :class:`numpy.ndarray` (the data for the curve)
-
-        """
-        # TODO: If I implement 2D arrays, need to check here for :1 :2 :3 etc.
+        """Provide access to curve data."""
         curve_mnemonics = [c.mnemonic for c in self.curves]
         if isinstance(key, int):
             return self.curves[key].data
@@ -389,16 +339,7 @@ class LASFile(object):
             raise KeyError("{} not found in curves ({})".format(key, curve_mnemonics))
 
     def __setitem__(self, key, value):
-        """Append a curve.
-
-        Arguments:
-            key (str): the curve mnemonic
-            value (1D data or CurveItem): either the curve data, or a CurveItem
-
-        See :meth:`lascheck.las.LASFile.append_curve_item` or
-        :meth:`lascheck.las.LASFile.append_curve` for more details.
-
-        """
+        """Append a curve."""
         if isinstance(value, CurveItem):
             if key != value.mnemonic:
                 raise KeyError(
@@ -434,12 +375,7 @@ class LASFile(object):
 
     @property
     def version(self):
-        """Header information from the Version (~V) section.
-
-        Returns:
-            :class:`lascheck.las_items.SectionItems` object.
-
-        """
+        """Header information from the Version (~V) section."""
         return self.sections["Version"]
 
     @version.setter
@@ -448,12 +384,7 @@ class LASFile(object):
 
     @property
     def well(self):
-        """Header information from the Well (~W) section.
-
-        Returns:
-            :class:`lascheck.las_items.SectionItems` object.
-
-        """
+        """Header information from the Well (~W) section."""
         return self.sections["Well"]
 
     @well.setter
@@ -462,12 +393,7 @@ class LASFile(object):
 
     @property
     def curves(self):
-        """Curve information and data from the Curves (~C) and data section..
-
-        Returns:
-            :class:`lascheck.las_items.SectionItems` object.
-
-        """
+        """Curve information and data from the Curves (~C) and data section."""
         return self.sections["Curves"]
 
     @curves.setter
@@ -476,12 +402,7 @@ class LASFile(object):
 
     @property
     def curvesdict(self):
-        """Curve information and data from the Curves (~C) and data section..
-
-        Returns:
-            dict
-
-        """
+        """Curve information and data from the Curves (~C) and data section."""
         d = {}
         for curve in self.curves:
             d[curve["mnemonic"]] = curve
@@ -489,12 +410,7 @@ class LASFile(object):
 
     @property
     def params(self):
-        """Header information from the Parameter (~P) section.
-
-        Returns:
-            :class:`lascheck.las_items.SectionItems` object.
-
-        """
+        """Header information from the Parameter (~P) section."""
         return self.sections["Parameter"]
 
     @params.setter
@@ -503,12 +419,7 @@ class LASFile(object):
 
     @property
     def other(self):
-        """Header information from the Other (~O) section.
-
-        Returns:
-            str
-
-        """
+        """Header information from the Other (~O) section."""
         return self.sections["Other"]
 
     @other.setter
@@ -517,12 +428,7 @@ class LASFile(object):
 
     @property
     def metadata(self):
-        """All header information joined together.
-
-        Returns:
-            :class:`lascheck.las_items.SectionItems` object.
-
-        """
+        """All header information joined together."""
         s = SectionItems()
         for section in self.sections:
             for item in section:
@@ -535,17 +441,12 @@ class LASFile(object):
 
     @property
     def header(self):
-        """All header information
-
-        Returns:
-            dict
-
-        """
+        """All header information"""
         return self.sections
-
 
     @property
     def data(self):
+        import numpy as np
         return np.vstack([c.data for c in self.curves]).T
 
     @data.setter
@@ -553,20 +454,7 @@ class LASFile(object):
         return self.set_data(value)
 
     def set_data(self, array_like, names=None, truncate=False):
-        """Set the data for the LAS; actually sets data on individual curves.
-
-        Arguments:
-            array_like (array_like or :class:`pandas.DataFrame`): 2-D data array
-
-        Keyword Arguments:
-            names (list, optional): used to replace the names of the existing
-                :class:`lascheck.las_items.CurveItem` objects.
-            truncate (bool): remove any columns which are not included in the
-                Curves (~C) section.
-
-        Note: you can pass a :class:`pandas.DataFrame` to this method.
-
-        """
+        """Set the data for the LAS; actually sets data on individual curves."""
         try:
             import pandas as pd
         except ImportError:
@@ -602,9 +490,7 @@ class LASFile(object):
 
     @property
     def index(self):
-        """Return data from the first column of the LAS file data (depth/time).
-
-        """
+        """Return data from the first column of the LAS file data (depth/time)."""
         return self.curves[0].data
 
     @property
@@ -628,11 +514,7 @@ class LASFile(object):
             raise exceptions.LASUnknownUnitError("Unit of depth index not known")
 
     def _index_unit_contains(self, unit_code):
-        """Check value of index_unit string, ignoring case
-
-        Args:
-            index unit code (string) e.g. 'M' or 'FT'
-        """
+        """Check value of index_unit string, ignoring case"""
         return self.index_unit and (unit_code.upper() in self.index_unit.upper())
 
     def add_curve_raw(self, mnemonic, data, unit="", descr="", value=""):
@@ -640,22 +522,11 @@ class LASFile(object):
         return self.append_curve_item(self, mnemonic, data, unit, descr, value)
 
     def append_curve_item(self, curve_item):
-        """Add a CurveItem.
-
-        Args:
-            curve_item (lascheck.CurveItem)
-
-        """
+        """Add a CurveItem."""
         self.insert_curve_item(len(self.curves), curve_item)
 
     def insert_curve_item(self, ix, curve_item):
-        """Insert a CurveItem.
-
-        Args:
-            ix (int): position to insert CurveItem i.e. 0 for start
-            curve_item (lascheck.CurveItem)
-
-        """
+        """Insert a CurveItem."""
         assert isinstance(curve_item, CurveItem)
         self.curves.insert(ix, curve_item)
 
@@ -664,47 +535,16 @@ class LASFile(object):
         return self.append_curve(*args, **kwargs)
 
     def append_curve(self, mnemonic, data, unit="", descr="", value=""):
-        """Add a curve.
-
-        Arguments:
-            mnemonic (str): the curve mnemonic
-            data (1D ndarray): the curve data
-
-        Keyword Arguments:
-            unit (str): curve unit
-            descr (str): curve description
-            value (int/float/str): value e.g. API code.
-
-        """
+        """Add a curve."""
         return self.insert_curve(len(self.curves), mnemonic, data, unit, descr, value)
 
     def insert_curve(self, ix, mnemonic, data, unit="", descr="", value=""):
-        """Insert a curve.
-
-        Arguments:
-            ix (int): position to insert curve at i.e. 0 for start.
-            mnemonic (str): the curve mnemonic
-            data (1D ndarray): the curve data
-
-        Keyword Arguments:
-            unit (str): curve unit
-            descr (str): curve description
-            value (int/float/str): value e.g. API code.
-
-        """
+        """Insert a curve."""
         curve = CurveItem(mnemonic, unit, value, descr, data)
         self.insert_curve_item(ix, curve)
 
     def delete_curve(self, mnemonic=None, ix=None):
-        """Delete a curve.
-
-        Keyword Arguments:
-            ix (int): index of curve in LASFile.curves.
-            mnemonic (str): mnemonic of curve.
-
-        The index takes precedence over the mnemonic.
-
-        """
+        """Delete a curve."""
         if ix is None:
             ix = self.curves.keys().index(mnemonic)
         self.curves.pop(ix)
@@ -725,65 +565,233 @@ class LASFile(object):
         raise Exception("Cannot set objects from JSON")
 
     def check_conformity(self):
-        return spec.MandatorySections.check(self) and \
-               spec.MandatoryLinesInVersionSection.check(self) and \
-               spec.MandatoryLinesInWellSection.check(self) and \
-               spec.DuplicateSections.check(self) and \
-               spec.ValidIndexMnemonic.check(self) and \
-               spec.VSectionFirst.check(self) and \
-               spec.BlankLineInSection.check(self) and \
-               spec.ValidUnitForDepth.check(self)
-                #    spec.ValidDepthDividedByStep.check(self) and \
-
+        """Check conformity to LAS 2.0 specification including special characters."""
+        return (spec.MandatorySections.check(self) and 
+                spec.MandatoryLinesInVersionSection.check(self) and 
+                spec.MandatoryLinesInWellSection.check(self) and 
+                spec.DuplicateSections.check(self) and 
+                spec.ValidIndexMnemonic.check(self) and 
+                spec.VSectionFirst.check(self) and 
+                spec.BlankLineInSection.check(self) and 
+                spec.ValidUnitForDepth.check(self) and
+                spec.ValidMnemonicCharacters.check(self) and  # NEW
+                spec.NoHashInMnemonics.check(self) and  # NEW
+                spec.MnemonicStartsWithLetter.check(self) and   # NEW
+                spec.DuplicateCurves.check(self)) # NEW
+    
 
     def get_non_conformities(self):
+        """Get all non-conformities including special character issues."""
+        # Standard conformity checks
         if (spec.MandatorySections.check(self)) is False:
-            self.non_conformities.append(tr("Missing mandatory sections: {}".format(spec.MandatorySections.get_missing_mandatory_sections(self))))
+            self.non_conformities.append(tr("Missing mandatory sections: {}".format(
+                spec.MandatorySections.get_missing_mandatory_sections(self))))
+        
         if ("Version" in self.sections) and (spec.MandatoryLinesInVersionSection.check(self)) is False:
             self.non_conformities.append(tr("Missing mandatory lines in ~v Section"))
+        
         if (spec.MandatoryLinesInWellSection.check(self)) is False:
             self.non_conformities.append(tr("Missing mandatory lines in ~w Section"))
-        # elif ('Well' in self.sections) and (spec.ValidDepthDividedByStep.check(self)) is False:
-        #     for non_conforming_depth in self.non_conforming_depth:
-        #         self.non_conformities.append("{Mnemonic} divided by step is not a whole number".format(Mnemonic=non_conforming_depth))
-
+        
         if ('Curves' in self.sections) and (spec.ValidIndexMnemonic.check(self)) is False:
             self.non_conformities.append(tr("Invalid index mnemonic. "
                                          "The only valid mnemonics for the index channel are DEPT, DEPTH, TIME, or INDEX."))
+        
         if (spec.VSectionFirst.check(self)) is False:
             self.non_conformities.append(tr("~v section not first"))
-
+        
         if (spec.BlankLineInSection.check(self)) is False:
             for section in self.sections_with_blank_line:
-                self.non_conformities.append(tr(
-                    f"Section having blank line: {section}"))
+                self.non_conformities.append(tr(f"Section having blank line: {section}"))
+        
         if self.sections_after_a_section:
             self.non_conformities.append(tr("Sections after ~a section"))
+        
         if (spec.ValidUnitForDepth.check(self)) is False:
             self.non_conformities.append(tr(
-                    "If the index is depth, the units must be M (metres), F (feet) or FT (feet)"))
+                "If the index is depth, the units must be M (metres), F (feet) or FT (feet)"))
+        
+        # NEW: Special character checks
+        if not spec.ValidMnemonicCharacters.check(self):
+            invalid_mnemonics = spec.ValidMnemonicCharacters.get_invalid_mnemonics(self)
+            for invalid in invalid_mnemonics:
+                chars = ', '.join(invalid['special_chars'])
+                if invalid['type'] == 'curve':
+                    self.non_conformities.append(
+                        tr(f"Invalid characters in mnemonic: Кривая №{invalid['index']} '{invalid['mnemonic']}' "
+                           f"содержит символы: '{chars}'"))
+                else:
+                    self.non_conformities.append(
+                        tr(f"Invalid characters in mnemonic: '{invalid['mnemonic']}' в секции {invalid['section']} "
+                           f"содержит недопустимые символы: {chars}"))
+        
+        
+        # NEW: Check for mnemonics starting with non-letter
+        if not spec.MnemonicStartsWithLetter.check(self):
+            invalid_start = spec.MnemonicStartsWithLetter.get_invalid_starting_mnemonics(self)
+            for item in invalid_start:
+                if item['type'] == 'curve':
+                    self.non_conformities.append(
+                        tr(f"Mnemonic does not start with letter: Кривая {item['index']} '{item['mnemonic']}' "
+                           f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
+                else:
+                    self.non_conformities.append(
+                        tr(f"Mnemonic does not start with letter: '{item['mnemonic']}' в секции {item['section']} "
+                           f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
+        
+        if ('Curves' in self.sections) and (spec.DuplicateCurves.check(self)) is False:
+            duplicate_curves = spec.DuplicateCurves.get_duplicate_curves_with_lines(self)
+            if duplicate_curves:
+                self.duplicate_curves = duplicate_curves
+                duplicate_descriptions = []
+                for mnemonic, line_numbers in duplicate_curves.items():
+                    # Format line numbers, handling 'unknown' cases
+                    line_nums_str = ', '.join(
+                        str(ln) if ln != 'unknown' else '?' 
+                        for ln in line_numbers
+                    )
+                duplicate_descriptions.append(
+                    '"{}" (строки: {})'.format(mnemonic, line_nums_str)
+                )
+                self.non_conformities.append(
+                tr("Duplicate curve mnemonics found: {}".format(', '.join(duplicate_descriptions)))
+            )
+        
+        # Get header errors
         header_errors = self.get_all_header_errors()
-        self.non_conformities.extend(header_errors)    
+        self.non_conformities.extend(header_errors)
+        
         return self.non_conformities
     
     def get_all_header_errors(self):
-    # """Get all header errors from all sections."""
+        """Get all header errors from all sections."""
         all_header_errors = []
         for section_name, section in self.sections.items():
             if hasattr(section, 'header_errors'):
                 for error in section.header_errors:
                     all_header_errors.append(tr(f"Header error in \"{section_name}\": {error}"))
         return all_header_errors
+    
+    def get_special_character_issues(self):
+        """Get detailed information about special character issues."""
+        issues = {
+            'invalid_characters': [],
+            'hash_characters': [],
+            'invalid_start': [],
+            'suggestions': []
+        }
+        
+        # Check for invalid characters
+        if not spec.ValidMnemonicCharacters.check(self):
+            issues['invalid_characters'] = spec.ValidMnemonicCharacters.get_invalid_mnemonics(self)
+            issues['suggestions'].append(
+                "Используйте только буквы (A-Z), цифры (0-9), подчёркивание (_) и дефис (-) в мнемониках.")
+        
+        # Check for hash characters
+        if not spec.NoHashInMnemonics.check(self):
+            issues['hash_characters'] = spec.NoHashInMnemonics.get_mnemonics_with_hash(self)
+            issues['suggestions'].append(
+                "Замените символ # на подчёркивание (_) или удалите его. Например: 'GR#1' → 'GR_1' или 'GR1'")
+        
+        # Check for invalid starting characters
+        if not spec.MnemonicStartsWithLetter.check(self):
+            issues['invalid_start'] = spec.MnemonicStartsWithLetter.get_invalid_starting_mnemonics(self)
+            issues['suggestions'].append(
+                "Мнемоники должны начинаться с буквы. Например: '1CURVE' → 'C1CURVE' или 'CURVE1'")
+        
+        return issues
+    
+    def fix_special_characters(self, auto_fix=False):
+        """
+        Attempt to fix special character issues in mnemonics.
+        
+        Args:
+            auto_fix (bool): If True, automatically apply fixes. If False, return suggested fixes.
+        
+        Returns:
+            dict: Dictionary with original and suggested fixed mnemonics
+        """
+        fixes = {
+            'curves': [],
+            'well': [],
+            'parameters': []
+        }
+        
+        # Pattern for cleaning mnemonics
+        special_chars_pattern = re.compile(r'[#@!$%^&*()\[\]{};:"\'<>?\\|`~+=]')
+        
+        # Fix curves
+        if "Curves" in self.sections:
+            for i, curve in enumerate(self.curves):
+                original = curve.mnemonic
+                fixed = special_chars_pattern.sub('_', original)
+                
+                # If starts with non-letter, prepend 'C'
+                if fixed and not fixed[0].isalpha():
+                    fixed = 'C' + fixed
+                
+                # Clean up multiple underscores
+                fixed = re.sub(r'_+', '_', fixed)
+                fixed = fixed.strip('_')
+                
+                if original != fixed:
+                    fixes['curves'].append({
+                        'index': i,
+                        'original': original,
+                        'fixed': fixed
+                    })
+                    if auto_fix:
+                        curve.mnemonic = fixed
+        
+        # Fix well section
+        if "Well" in self.sections:
+            for item in self.well:
+                original = item.mnemonic
+                fixed = special_chars_pattern.sub('_', original)
+                
+                # If starts with non-letter, prepend 'W'
+                if fixed and not fixed[0].isalpha():
+                    fixed = 'W' + fixed
+                
+                # Clean up multiple underscores
+                fixed = re.sub(r'_+', '_', fixed)
+                fixed = fixed.strip('_')
+                
+                if original != fixed:
+                    fixes['well'].append({
+                        'original': original,
+                        'fixed': fixed
+                    })
+                    if auto_fix:
+                        item.mnemonic = fixed
+        
+        # Fix parameters
+        if "Parameter" in self.sections:
+            for item in self.params:
+                original = item.mnemonic
+                fixed = special_chars_pattern.sub('_', original)
+                
+                # If starts with non-letter, prepend 'P'
+                if fixed and not fixed[0].isalpha():
+                    fixed = 'P' + fixed
+                
+                # Clean up multiple underscores
+                fixed = re.sub(r'_+', '_', fixed)
+                fixed = fixed.strip('_')
+                
+                if original != fixed:
+                    fixes['parameters'].append({
+                        'original': original,
+                        'fixed': fixed
+                    })
+                    if auto_fix:
+                        item.mnemonic = fixed
+        
+        return fixes
 
 
 class Las(LASFile):
-
-    """LAS file object.
-
-    Retained for backwards compatibility.
-
-    """
-
+    """LAS file object. Retained for backwards compatibility."""
     pass
 
 

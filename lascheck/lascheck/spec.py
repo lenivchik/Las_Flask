@@ -1,3 +1,5 @@
+import re
+
 class Rule:
     pass
 
@@ -24,13 +26,6 @@ class AsciiSectionExists(Rule):
     @staticmethod
     def check(las_file):
         return "Ascii" in las_file.sections
-        # if "Ascii" in las_file.sections:
-        #     # for curve in las_file.curves:
-        #     #     if len(curve.data) == 0:
-        #     #         return False
-        #     return True
-        # else:
-        #     return False
 
 
 class MandatorySections(Rule):
@@ -125,44 +120,6 @@ class ValidUnitForDepth(Rule):
         return True
 
 
-# class ValidDepthDividedByStep(Rule):
-#     def custom_float_modulo(a, b):
-#         # Ensure a and b are positive
-#         a, b = abs(a), abs(b)
-
-#         # Find the scale factor to convert to integers
-#         a_decimals = len(str(a).split('.')[-1]) if '.' in str(a) else 0
-#         b_decimals = len(str(b).split('.')[-1]) if '.' in str(b) else 0
-#         scale = 10 ** max(a_decimals, b_decimals)
-
-#         # Scale a and b, but keep them as floats to avoid overflow
-#         a_scaled = a * scale
-#         b_scaled = b * scale
-
-#         # Perform the modulo operation
-#         quotient = a_scaled // b_scaled
-#         remainder = a_scaled - quotient * b_scaled
-
-#         # Scale back the remainder
-#         return remainder / scale
-
-#     @staticmethod
-#     def check(las_file):
-#         if "Well" in las_file.sections and 'STRT' in las_file.well and \
-#                 'STOP' in las_file.well and 'STEP' in las_file.well:
-#             las_file.non_conforming_depth = []
-#             if ValidDepthDividedByStep.custom_float_modulo(las_file.well['STRT'].value, las_file.well['STEP'].value) != 0:
-#                 las_file.non_conforming_depth.append('STRT')
-#             if ValidDepthDividedByStep.custom_float_modulo(las_file.well['STOP'].value, las_file.well['STEP'].value) != 0:
-#                 las_file.non_conforming_depth.append('STOP')
-#             # modulo operator has limitations, so using a custom float modulo function
-#             # if las_file.well['STRT'].value % las_file.well['STEP'].value != 0:
-#             #     las_file.non_conforming_depth.append('STRT')
-#             # if las_file.well['STOP'].value % las_file.well['STEP'].value != 0:
-#             #     las_file.non_conforming_depth.append('STOP')
-#             return las_file.non_conforming_depth.__len__() == 0
-#         return False
-
 class VSectionFirst(Rule):
     @staticmethod
     def check(las_file):
@@ -175,3 +132,296 @@ class BlankLineInSection(Rule):
         if las_file.blank_line_in_section:
             return False
         return True
+
+
+# NEW RULES FOR SPECIAL CHARACTER VALIDATION
+
+class ValidMnemonicCharacters(Rule):
+    """
+    Check that mnemonics only contain valid characters.
+    According to LAS 2.0 spec, mnemonics should only contain:
+    - Letters (A-Z, a-z)
+    - Numbers (0-9)
+    - Underscore (_)
+    - Hyphen/dash (-)
+    - Period (.) - sometimes used for units or sub-properties
+    """
+    
+    # Pattern for valid mnemonic characters
+    VALID_PATTERN = re.compile(r'^[A-Za-z0-9_\-\.]+$')
+    
+    # Pattern for problematic special characters
+    SPECIAL_CHARS_PATTERN = re.compile(r'[#@!$%^&*()\[\]{};:"\'<>?\\|`~+=]')
+    
+    @staticmethod
+    def check(las_file):
+        """Check if all mnemonics contain only valid characters."""
+        return (ValidMnemonicCharacters.check_curves(las_file) and
+                ValidMnemonicCharacters.check_well_section(las_file) and
+                ValidMnemonicCharacters.check_parameters(las_file))
+    
+    @staticmethod
+    def check_curves(las_file):
+        """Check curve mnemonics for invalid characters."""
+        if "Curves" not in las_file.sections:
+            return True
+        
+        for curve in las_file.curves:
+            if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.mnemonic):
+                return False
+        return True
+    
+    @staticmethod
+    def check_well_section(las_file):
+        """Check well section mnemonics for invalid characters."""
+        if "Well" not in las_file.sections:
+            return True
+        
+        for item in las_file.well:
+            if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
+                return False
+        return True
+    
+    @staticmethod
+    def check_parameters(las_file):
+        """Check parameter mnemonics for invalid characters."""
+        if "Parameter" not in las_file.sections:
+            return True
+        
+        for item in las_file.params:
+            if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
+                return False
+        return True
+    
+    @staticmethod
+    def get_invalid_mnemonics(las_file):
+        """Get list of all mnemonics with invalid characters."""
+        invalid = []
+        
+        # Check curves
+        if "Curves" in las_file.sections:
+            for i, curve in enumerate(las_file.curves):
+                if not ValidMnemonicCharacters.VALID_PATTERN.match(curve.mnemonic):
+                    special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(curve.mnemonic)
+                    invalid.append({
+                        'section': '~C',
+                        'index': i + 1,
+                        'mnemonic': curve.mnemonic,
+                        'special_chars': special_chars,
+                        'type': 'curve'
+                    })
+        
+        # Check well section
+        if "Well" in las_file.sections:
+            for item in las_file.well:
+                if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
+                    special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(item.mnemonic)
+                    invalid.append({
+                        'section': '~W',
+                        'mnemonic': item.mnemonic,
+                        'special_chars': special_chars,
+                        'type': 'well'
+                    })
+        
+        # Check parameters
+        if "Parameter" in las_file.sections:
+            for item in las_file.params:
+                if not ValidMnemonicCharacters.VALID_PATTERN.match(item.mnemonic):
+                    special_chars = ValidMnemonicCharacters.SPECIAL_CHARS_PATTERN.findall(item.mnemonic)
+                    invalid.append({
+                        'section': '~P',
+                        'mnemonic': item.mnemonic,
+                        'special_chars': special_chars,
+                        'type': 'parameter'
+                    })
+        
+        return invalid
+
+
+class NoHashInMnemonics(Rule):
+    """
+    Specific rule to check for # character in mnemonics.
+    The # character is particularly problematic as it's often used for comments.
+    """
+    
+    @staticmethod
+    def check(las_file):
+        """Check if any mnemonic contains the # character."""
+        # Check curves
+        if "Curves" in las_file.sections:
+            for curve in las_file.curves:
+                if '#' in curve.mnemonic:
+                    return False
+        
+        # Check well section
+        if "Well" in las_file.sections:
+            for item in las_file.well:
+                if '#' in item.mnemonic:
+                    return False
+        
+        # Check parameters
+        if "Parameter" in las_file.sections:
+            for item in las_file.params:
+                if '#' in item.mnemonic:
+                    return False
+        
+        return True
+    
+    @staticmethod
+    def get_mnemonics_with_hash(las_file):
+        """Get list of all mnemonics containing # character."""
+        mnemonics_with_hash = []
+        
+        # Check curves
+        if "Curves" in las_file.sections:
+            for i, curve in enumerate(las_file.curves):
+                if '#' in curve.mnemonic:
+                    mnemonics_with_hash.append({
+                        'section': '~C',
+                        'index': i + 1,
+                        'mnemonic': curve.mnemonic,
+                        'type': 'curve'
+                    })
+        
+        # Check well section
+        if "Well" in las_file.sections:
+            for item in las_file.well:
+                if '#' in item.mnemonic:
+                    mnemonics_with_hash.append({
+                        'section': '~W',
+                        'mnemonic': item.mnemonic,
+                        'type': 'well'
+                    })
+        
+        # Check parameters
+        if "Parameter" in las_file.sections:
+            for item in las_file.params:
+                if '#' in item.mnemonic:
+                    mnemonics_with_hash.append({
+                        'section': '~P',
+                        'mnemonic': item.mnemonic,
+                        'type': 'parameter'
+                    })
+        
+        return mnemonics_with_hash
+
+
+class MnemonicStartsWithLetter(Rule):
+    """
+    Check that mnemonics start with a letter, not a number or special character.
+    This is a best practice for most programming and data systems.
+    """
+    
+    @staticmethod
+    def check(las_file):
+        """Check if all mnemonics start with a letter."""
+        # Check curves
+        if "Curves" in las_file.sections:
+            for curve in las_file.curves:
+                if curve.mnemonic and not curve.mnemonic[0].isalpha():
+                    return False
+        
+        # Check well section
+        if "Well" in las_file.sections:
+            for item in las_file.well:
+                if item.mnemonic and not item.mnemonic[0].isalpha():
+                    return False
+        
+        # Check parameters
+        if "Parameter" in las_file.sections:
+            for item in las_file.params:
+                if item.mnemonic and not item.mnemonic[0].isalpha():
+                    return False
+        
+        return True
+    
+    @staticmethod
+    def get_invalid_starting_mnemonics(las_file):
+        """Get list of mnemonics that don't start with a letter."""
+        invalid = []
+        
+        # Check curves
+        if "Curves" in las_file.sections:
+            for i, curve in enumerate(las_file.curves):
+                if curve.mnemonic and not curve.mnemonic[0].isalpha():
+                    invalid.append({
+                        'section': '~C',
+                        'index': i + 1,
+                        'mnemonic': curve.mnemonic,
+                        'first_char': curve.mnemonic[0],
+                        'type': 'curve'
+                    })
+        
+        # Check well section
+        if "Well" in las_file.sections:
+            for item in las_file.well:
+                if item.mnemonic and not item.mnemonic[0].isalpha():
+                    invalid.append({
+                        'section': '~W',
+                        'mnemonic': item.mnemonic,
+                        'first_char': item.mnemonic[0],
+                        'type': 'well'
+                    })
+        
+        # Check parameters
+        if "Parameter" in las_file.sections:
+            for item in las_file.params:
+                if item.mnemonic and not item.mnemonic[0].isalpha():
+                    invalid.append({
+                        'section': '~P',
+                        'mnemonic': item.mnemonic,
+                        'first_char': item.mnemonic[0],
+                        'type': 'parameter'
+                    })
+        
+        return invalid
+
+
+
+class DuplicateCurves(Rule):
+    """Check for duplicate curve mnemonics in the ~C section."""
+    
+    @staticmethod
+    def check(las_file):
+        """
+        Check if there are duplicate curve mnemonics.
+        Returns True if no duplicates, False if duplicates exist.
+        """
+        if "Curves" not in las_file.sections:
+            return True
+        
+        curve_mnemonics = {}
+        for curve in las_file.curves:
+            original_mnemonic = curve.original_mnemonic
+            if original_mnemonic in curve_mnemonics:
+                return False  # Found a duplicate
+            curve_mnemonics[original_mnemonic] = True
+        
+        return True
+    
+    @staticmethod
+    def get_duplicate_curves_with_lines(las_file):
+        """
+        Get detailed information about duplicate curve mnemonics including line numbers.
+        Returns a dictionary with mnemonics as keys and list of line numbers as values.
+        """
+        if "Curves" not in las_file.sections:
+            return {}
+        
+        curve_info = {}
+        duplicates = {}
+        
+        for curve in las_file.curves:
+            original_mnemonic = curve.original_mnemonic
+            line_num = getattr(curve, 'line_number', 'unknown')
+            
+            if original_mnemonic not in curve_info:
+                curve_info[original_mnemonic] = []
+            curve_info[original_mnemonic].append(line_num)
+        
+        # Filter to only keep duplicates
+        for mnemonic, lines in curve_info.items():
+            if len(lines) > 1:
+                duplicates[mnemonic] = lines
+        
+        return duplicates

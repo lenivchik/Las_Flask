@@ -458,7 +458,10 @@ def parse_header_section(
                 values["name"] = values["name"].upper()
             elif mnemonic_case == "lower":
                 values["name"] = values["name"].lower()
-            section.append(parser(**values))
+            
+            item = parser(**values)
+            item.line_number = j  # ADD THIS LINE
+            section.append(item)
         
         # Store header errors in the section for later retrieval
     if hasattr(section, '__dict__'):

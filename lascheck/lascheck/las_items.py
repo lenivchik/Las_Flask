@@ -52,6 +52,7 @@ class HeaderItem(OrderedDict):
         self.value = value
         self.descr = descr
         self.data = data
+        self.line_number = None
 
     @property
     def useful_mnemonic(self):
