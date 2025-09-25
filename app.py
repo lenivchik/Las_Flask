@@ -4,6 +4,7 @@ import lascheck  # модуль, где логика проверки .las фа�
 from werkzeug.utils import secure_filename
 import Test_1
 import Test_2
+import Test_3
 
 app = Flask(__name__)
 
@@ -25,7 +26,9 @@ def validate():
     
 
     file_content = file.read().decode('CP1251', errors='replace')
-    detailed_result = Test_1.validate_las_file_detailed(file_content)
+    # detailed_result = Test_1.validate_las_file_detailed(file_content)
+    detailed_result = Test_3.validate_las_file_enhanced(file_content)
+
     # detailed_result= Test_2.validate_las_file_comprehensive(file)
 
     # error=[]

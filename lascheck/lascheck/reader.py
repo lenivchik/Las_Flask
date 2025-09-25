@@ -289,8 +289,8 @@ def read_file_contents(file_obj, regexp_subs, value_null_subs, ignore_data=False
             if section_exists:
                 blank_line_in_section = True
                 section_with_blank_line = sect_title_line.split()[0]
-                sections_with_blank_line.append(
-                    section_with_blank_line)
+                if section_with_blank_line not in sections_with_blank_line:
+                    sections_with_blank_line.append(section_with_blank_line)
             continue
         if data_section_read:
             sections_after_a_section = True
