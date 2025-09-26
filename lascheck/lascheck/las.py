@@ -85,7 +85,8 @@ class LASFile(object):
         super(LASFile, self).__init__()
         self._text = ""
         self.index_unit = None
-        self.non_conformities = []
+        self.non_conformities = []  # For errors
+        self.warnings = []  # NEW: For warnings
         self.duplicate_v_section = False
         self.duplicate_w_section = False
         self.duplicate_p_section = False
@@ -580,8 +581,11 @@ class LASFile(object):
                 spec.DuplicateCurves.check(self)) # NEW
     
     def get_non_conformities(self):
-        """Get all non-conformities including special character issues with line numbers."""
-        # Standard conformity checks
+        """Get all non-conformities (errors) - excluding warnings."""
+        # Clear the list to avoid duplicates on multiple calls
+        self.non_conformities = []
+        
+        # Standard conformity checks (ERRORS)
         if (spec.MandatorySections.check(self)) is False:
             self.non_conformities.append(tr("Missing mandatory sections: {}".format(
                 spec.MandatorySections.get_missing_mandatory_sections(self))))
@@ -598,11 +602,7 @@ class LASFile(object):
         
         if (spec.VSectionFirst.check(self)) is False:
             self.non_conformities.append(tr("~v section not first"))
-        
-        if (spec.BlankLineInSection.check(self)) is False:
-            for section in self.sections_with_blank_line:
-                self.non_conformities.append(tr(f"Section having blank line: {section}"))
-        
+                
         if self.sections_after_a_section:
             self.non_conformities.append(tr("Sections after ~a section"))
         
@@ -610,59 +610,15 @@ class LASFile(object):
             self.non_conformities.append(tr(
                 "If the index is depth, the units must be M (metres), F (feet) or FT (feet)"))
         
-        # NEW: Special character checks with line numbers
-        if not spec.ValidMnemonicCharacters.check(self):
-            invalid_mnemonics = spec.ValidMnemonicCharacters.get_invalid_mnemonics(self)
-            for invalid in invalid_mnemonics:
-                chars = ', '.join(invalid['special_chars'])
-                line_info = f" (строка {invalid['line_number']})" if invalid['line_number'] else ""
-                
-                if invalid['type'] == 'curve':
-                    self.non_conformities.append(
-                        tr(f"Invalid characters in mnemonic: Кривая №{invalid['index']} '{invalid['mnemonic']}'{line_info} "
-                        f"содержит символы: '{chars}'"))
-                else:
-                    self.non_conformities.append(
-                        tr(f"Invalid characters in mnemonic: '{invalid['mnemonic']}' в секции {invalid['section']}{line_info} "
-                        f"содержит недопустимые символы: {chars}"))
+       
         
-        # NEW: Check for hash characters with line numbers
-        if not spec.NoHashInMnemonics.check(self):
-            hash_mnemonics = spec.NoHashInMnemonics.get_mnemonics_with_hash(self)
-            for item in hash_mnemonics:
-                line_info = f" (строка {item['line_number']})" if item['line_number'] else ""
-                
-                if item['type'] == 'curve':
-                    self.non_conformities.append(
-                        tr(f"Hash character (#) in mnemonic: Кривая №{item['index']} '{item['mnemonic']}'{line_info}. "
-                        f"Замените # на _ или удалите."))
-                else:
-                    self.non_conformities.append(
-                        tr(f"Hash character (#) in mnemonic: '{item['mnemonic']}' в секции {item['section']}{line_info}. "
-                        f"Замените # на _ или удалите."))
-        
-        # NEW: Check for mnemonics starting with non-letter with line numbers
-        if not spec.MnemonicStartsWithLetter.check(self):
-            invalid_start = spec.MnemonicStartsWithLetter.get_invalid_starting_mnemonics(self)
-            for item in invalid_start:
-                line_info = f" (строка {item['line_number']})" if item['line_number'] else ""
-                
-                if item['type'] == 'curve':
-                    self.non_conformities.append(
-                        tr(f"Mnemonic does not start with letter: Кривая {item['index']} '{item['mnemonic']}'{line_info} "
-                        f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
-                else:
-                    self.non_conformities.append(
-                        tr(f"Mnemonic does not start with letter: '{item['mnemonic']}' в секции {item['section']}{line_info} "
-                        f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
-        
+        # Duplicate curves check remains as error
         if ('Curves' in self.sections) and (spec.DuplicateCurves.check(self)) is False:
             duplicate_curves = spec.DuplicateCurves.get_duplicate_curves_with_lines(self)
             if duplicate_curves:
                 self.duplicate_curves = duplicate_curves
                 duplicate_descriptions = []
                 for mnemonic, line_numbers in duplicate_curves.items():
-                    # Format line numbers, handling 'unknown' cases
                     line_nums_str = ', '.join(
                         str(ln) if ln != 'unknown' else '?' 
                         for ln in line_numbers
@@ -675,10 +631,103 @@ class LASFile(object):
                 )
         
         # Get header errors
-            header_errors = self.get_all_header_errors()
-            self.non_conformities.extend(header_errors)
+        header_errors = self.get_all_header_errors()
+        self.non_conformities.extend(header_errors)
         
         return self.non_conformities
+    
+    def get_warnings(self):
+        """Get all warnings - non-critical issues."""
+        # Clear the list to avoid duplicates on multiple calls
+        self.warnings = []
+        
+        # Blank lines in sections - WARNING
+        if (spec.BlankLineInSection.check(self)) is False:
+            unique_sections = list(set(self.sections_with_blank_line))
+            for section in unique_sections:
+                self.warnings.append(tr(f"Section having blank line: {section}"))
+        
+ # Special character checks remain as errors
+        if not spec.ValidMnemonicCharacters.check(self):
+            invalid_mnemonics = spec.ValidMnemonicCharacters.get_invalid_mnemonics(self)
+            for invalid in invalid_mnemonics:
+                chars = ', '.join(invalid['special_chars'])
+                line_info = f" (строка {invalid['line_number']})" if invalid['line_number'] else ""
+                
+                if invalid['type'] == 'curve':
+                    self.warnings.append(
+                        tr(f"Invalid characters in mnemonic: Кривая №{invalid['index']} '{invalid['mnemonic']}'{line_info} "
+                        f"содержит символы: '{chars}'"))
+                else:
+                    self.warnings.append(
+                        tr(f"Invalid characters in mnemonic: '{invalid['mnemonic']}' в секции {invalid['section']}{line_info} "
+                        f"содержит недопустимые символы: {chars}"))
+        
+        # # Hash character check remains as error
+        # if not spec.NoHashInMnemonics.check(self):
+        #     hash_mnemonics = spec.NoHashInMnemonics.get_mnemonics_with_hash(self)
+        #     for item in hash_mnemonics:
+        #         line_info = f" (строка {item['line_number']})" if item['line_number'] else ""
+                
+        #         if item['type'] == 'curve':
+        #             self.warnings.append(
+        #                 tr(f"Hash character (#) in mnemonic: Кривая №{item['index']} '{item['mnemonic']}'{line_info}. "
+        #                 f"Замените # на _ или удалите."))
+        #         else:
+        #             self.warnings.append(
+        #                 tr(f"Hash character (#) in mnemonic: '{item['mnemonic']}' в секции {item['section']}{line_info}. "
+        #                 f"Замените # на _ или удалите."))
+        
+        # Check for mnemonics starting with non-letter remains as error
+        if not spec.MnemonicStartsWithLetter.check(self):
+            invalid_start = spec.MnemonicStartsWithLetter.get_invalid_starting_mnemonics(self)
+            for item in invalid_start:
+                line_info = f" (строка {item['line_number']})" if item['line_number'] else ""
+                
+                if item['type'] == 'curve':
+                    self.warnings.append(
+                        tr(f"Mnemonic does not start with letter: Кривая {item['index']} '{item['mnemonic']}'{line_info} "
+                        f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
+                else:
+                    self.warnings.append(
+                        tr(f"Mnemonic does not start with letter: '{item['mnemonic']}' в секции {item['section']}{line_info} "
+                        f"начинается с '{item['first_char']}'. Добавьте букву в начало."))
+
+        # Add other warning-level checks here as needed
+        # For example, you might want to add:
+        # - Missing optional but recommended fields
+        # - Non-standard but acceptable values
+        # - Deprecated features still in use
+        
+        return self.warnings
+    
+    def get_all_issues(self):
+        """Get both errors and warnings in a structured format."""
+        return {
+            'errors': self.get_non_conformities(),
+            'warnings': self.get_warnings(),
+            'is_valid': len(self.get_non_conformities()) == 0,
+            'has_warnings': len(self.get_warnings()) > 0
+        }
+    
+    def check_conformity_with_warnings(self):
+        """Check conformity and return detailed results with both errors and warnings."""
+        errors = self.get_non_conformities()
+        warnings = self.get_warnings()
+        
+        return {
+            'is_valid': len(errors) == 0,
+            'is_perfect': len(errors) == 0 and len(warnings) == 0,
+            'error_count': len(errors),
+            'warning_count': len(warnings),
+            'errors': errors,
+            'warnings': warnings
+        }
+    
+
+
+
+
     # # def get_non_conformities(self):
     #     """Get all non-conformities including special character issues."""
     #     # Standard conformity checks
@@ -786,11 +835,11 @@ class LASFile(object):
             issues['suggestions'].append(
                 "Используйте только буквы (A-Z), цифры (0-9), подчёркивание (_) и дефис (-) в мнемониках.")
         
-        # Check for hash characters
-        if not spec.NoHashInMnemonics.check(self):
-            issues['hash_characters'] = spec.NoHashInMnemonics.get_mnemonics_with_hash(self)
-            issues['suggestions'].append(
-                "Замените символ # на подчёркивание (_) или удалите его. Например: 'GR#1' → 'GR_1' или 'GR1'")
+        # # Check for hash characters
+        # if not spec.NoHashInMnemonics.check(self):
+        #     issues['hash_characters'] = spec.NoHashInMnemonics.get_mnemonics_with_hash(self)
+        #     issues['suggestions'].append(
+        #         "Замените символ # на подчёркивание (_) или удалите его. Например: 'GR#1' → 'GR_1' или 'GR1'")
         
         # Check for invalid starting characters
         if not spec.MnemonicStartsWithLetter.check(self):

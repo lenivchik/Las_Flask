@@ -254,56 +254,171 @@ class LASValidator {
       this.validateBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Проверить';
     }
   }
-  
   displayResults(data) {
-    this.resultsContainer.style.display = 'block';
+  this.resultsContainer.style.display = 'block';
+  
+  // Scroll to results
+  this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  
+  // Check for errors and warnings
+  const hasErrors = data.errors && data.errors.length > 0;
+  const hasWarnings = data.warnings && data.warnings.length > 0;
+  const errorCount = data.errors ? data.errors.length : 0;
+  const warningCount = data.warnings ? data.warnings.length : 0;
+  
+  // Display summary based on presence of errors/warnings
+  if (!hasErrors && !hasWarnings) {
+    // No errors or warnings - complete success
+    this.validationSummary.innerHTML = `
+      <div class="alert alert-success d-flex align-items-center">
+        <i class="bi bi-check-circle-fill me-3 fs-3"></i>
+        <div>
+          <h5 class="mb-1">Файл прошёл проверку успешно!</h5>
+          <p class="mb-0">${data.summary || 'Все проверки пройдены без ошибок и предупреждений'}</p>
+          ${data.score !== undefined ? `
+            <div class="progress mt-3" style="height: 25px;">
+              <div class="progress-bar bg-success" 
+                   role="progressbar" 
+                   style="width: ${data.score}%">
+                  ${data.score}/100
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>`;
+    this.validationDetails.innerHTML = '';
     
-    // Scroll to results
-    this.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else if (!hasErrors && hasWarnings) {
+    // Only warnings, no errors
+    this.validationSummary.innerHTML = `
+      <div class="alert alert-warning d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-3 fs-3"></i>
+        <div>
+          <h5 class="mb-1">Файл проверен с предупреждениями</h5>
+          <p class="mb-0">
+            ${data.summary || `Обнаружено предупреждений: ${warningCount}`}
+          </p>
+          ${data.score !== undefined ? `
+            <div class="progress mt-3" style="height: 25px;">
+              <div class="progress-bar bg-warning" 
+                   role="progressbar" 
+                   style="width: ${data.score}%">
+                  ${data.score}/100
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>`;
     
-    // Display summary
-    if (data.valid) {
-      this.validationSummary.innerHTML = `
-        <div class="alert alert-success d-flex align-items-center">
-          <i class="bi bi-check-circle-fill me-3 fs-3"></i>
-          <div>
-            <h5 class="mb-1">Файл прошёл проверку успешно!</h5>
-            <p class="mb-0">${data.summary || 'Все проверки пройдены без ошибок'}</p>
-          </div>
-        </div>`;
-      this.validationDetails.innerHTML = '';
-      
-    } else {
-      const errorCount = data.errors ? data.errors.length : 0;
-      const warningCount = data.warnings ? data.warnings.length : 0;
-      
-      this.validationSummary.innerHTML = `
-        <div class="alert alert-danger d-flex align-items-center">
-          <i class="bi bi-exclamation-triangle-fill me-3 fs-3"></i>
-          <div>
-            <h5 class="mb-1">Обнаружены проблемы</h5>
-            <p class="mb-0">
-              Ошибок: <span class="badge bg-danger">${errorCount}</span>
-              ${warningCount > 0 ? `Предупреждений: <span class="badge bg-warning">${warningCount}</span>` : ''}
-            </p>
-          </div>
-        </div>`;
-      
-      // Display detailed errors
-      this.displayDetailedErrors(data);
-    }
+    // Display warnings
+    this.displayDetailedResults(data);
     
-    // Display additional info if available
-    if (data.info && data.info.length > 0) {
-      this.displayAdditionalInfo(data.info);
-    }
+  } else {
+    // Has errors (and possibly warnings)
+    this.validationSummary.innerHTML = `
+      <div class="alert alert-danger d-flex align-items-center">
+        <i class="bi bi-x-circle-fill me-3 fs-3"></i>
+        <div>
+          <h5 class="mb-1">Обнаружены ошибки</h5>
+          <p class="mb-0">
+            Ошибок: <span class="badge bg-danger">${errorCount}</span>
+            ${warningCount > 0 ? `Предупреждений: <span class="badge bg-warning text-dark">${warningCount}</span>` : ''}
+          </p>
+          ${data.score !== undefined ? `
+            <div class="progress mt-3" style="height: 25px;">
+              <div class="progress-bar bg-danger" 
+                   role="progressbar" 
+                   style="width: ${data.score}%">
+                  ${data.score}/100
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>`;
     
-    // Display statistics if available
-    if (data.statistics) {
-      this.displayStatistics(data.statistics);
-    }
+    // Display detailed errors and warnings
+    this.displayDetailedResults(data);
   }
   
+  // Display additional info if available
+  if (data.info && data.info.length > 0) {
+    this.displayAdditionalInfo(data.info);
+  }
+  
+  // Display statistics if available
+  if (data.statistics) {
+    this.displayStatistics(data.statistics);
+  }
+}
+displayDetailedResults(data) {
+  let detailsHTML = '<div class="error-list">';
+  
+  const errors = data.errors || [];
+  const warnings = data.warnings || [];
+  
+  // Display errors if any
+  if (errors.length > 0) {
+    detailsHTML += `
+      <div class="mb-4">
+        <h6 class="text-danger mb-3">
+          <i class="bi bi-x-circle me-2"></i>Ошибки (${errors.length})
+        </h6>
+        <div class="list-group">`;
+    
+    errors.forEach((error, index) => {
+      const errorText = typeof error === 'string' ? error : error.message;
+      detailsHTML += `
+        <div class="list-group-item list-group-item-danger">
+          <div class="d-flex w-100 justify-content-between">
+            <div>
+              <i class="bi bi-exclamation-circle me-2"></i>
+              <span>${this.escapeHtml(errorText)}</span>
+            </div>
+            <small>#${index + 1}</small>
+          </div>
+        </div>`;
+    });
+    
+    detailsHTML += '</div></div>';
+  }
+  
+  // Display warnings if any
+  if (warnings.length > 0) {
+    detailsHTML += `
+      <div class="mb-4">
+        <h6 class="text-warning mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>Предупреждения (${warnings.length})
+        </h6>
+        <div class="list-group">`;
+    
+    warnings.forEach((warning, index) => {
+      const warningText = typeof warning === 'string' ? warning : warning.message;
+      detailsHTML += `
+        <div class="list-group-item list-group-item-warning">
+          <div class="d-flex w-100 justify-content-between">
+            <div>
+              <i class="bi bi-info-circle me-2"></i>
+              <span>${this.escapeHtml(warningText)}</span>
+            </div>
+            <small>#${index + 1}</small>
+          </div>
+        </div>`;
+    });
+    
+    detailsHTML += '</div></div>';
+  }
+  
+  detailsHTML += '</div>';
+  this.validationDetails.innerHTML = detailsHTML;
+}
+
+// Helper function to determine progress bar color based on score
+getScoreClass(score) {
+  if (score >= 90) return 'bg-success';
+  if (score >= 70) return 'bg-warning';
+  return 'bg-danger';
+}
+
   displayDetailedErrors(data) {
     let detailsHTML = '<div class="error-list">';
     

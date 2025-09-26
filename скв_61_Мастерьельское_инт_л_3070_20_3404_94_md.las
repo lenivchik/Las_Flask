@@ -8,14 +8,14 @@ STRT.M          3070.200                      : START DEPTH
 STOP.M          3404.800                      : STOP DEPTH
 STEP.M          0.200                         : STEP
 NULL.           -999.250                      : NULL VALUE
-COMP.           ТФ АО "ССК"                   : COMPANY
+COMP.           пїЅпїЅ пїЅпїЅ "пїЅпїЅпїЅ"                   : COMPANY
 WELL.           61/6                          : WELL
-FLD.            Мастерьельское                : FIELD
+FLD.            пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ                : FIELD
 LOC.                                          : LOCATION
-CNTY.           Мастерьельское                : COUNTY
+CNTY.           пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ                : COUNTY
 STAT.                                         : STATE
 CTRY.                                         : COUNTRY
-SRVC.           УННБ ООО "ТНГ-Групп"          : SERVICE COMPANY
+SRVC.           пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ "пїЅпїЅпїЅ-пїЅпїЅпїЅпїЅпїЅ"          : SERVICE COMPANY
 DATE.           2025.08.16                    : LOG DATE
 UWI.                                          : UNIQUE WELL ID
 API.                                          : API NUMBER
@@ -49,15 +49,16 @@ RHOS16.GCC                                    : AZIMUTAL DENSITY 16
 WODCLS.PERCENT                                : HYDROGEN CONTENTS CALIBRATION FROM LINESTONE MATRIX
 ~PARAMETER INFORMATION SECTION
 #-----------------------------------------------------------------------------
-RTYPE.          ГК, ИК, ГГК, 2ННК             : RESEARCH TYPE
-DATASRC.        ТС Корвет                     : DATA SOURCE
+
+RTYPE.          пїЅпїЅ, пїЅпїЅ, пїЅпїЅпїЅ, 2пїЅпїЅпїЅ             : RESEARCH TYPE
+DATASRC.        пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ                     : DATA SOURCE
 DHOLE.          146.00                        : HOLE DIAMETER
-GROUP.          ННБ                           : GROUP NUMBER
-ENG1.           Даньшин Н.В.                  : NNB ENGINEER 1
+GROUP.          пїЅпїЅпїЅ                           : GROUP NUMBER
+ENG1.           пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ.пїЅ.                  : NNB ENGINEER 1
 ENG2.                                         : NNB ENGINEER 2
 ENG3.                                         : NNB ENGINEER 3
-TLMENG1.        Зарыпов Р.Р.                  : TELEMETRY ENGINEER 1
-TLMENG2.        Шафигуллин Д.И.               : TELEMETRY ENGINEER 2
+TLMENG1.        пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ.пїЅ.                  : TELEMETRY ENGINEER 1
+TLMENG2.        пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ.пїЅ.               : TELEMETRY ENGINEER 2
 TLMENG3.                                      : TELEMETRY ENGINEER 3
 PHONE.          +79172217478                  : PHONE NUMBER
 EMAIL.          tng.nnb1@mail.ru              : EMAIL
