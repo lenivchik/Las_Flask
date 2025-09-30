@@ -3,6 +3,7 @@ from typing import Dict, List, Any, Tuple
 import re
 import traceback
 from enum import Enum
+import time
 
 class ErrorSeverity(Enum):
     """Error severity levels"""
@@ -37,12 +38,11 @@ def validate_las_file_enhanced(file_path: str, **kwargs) -> Dict[str, Any]:
         - valid: Boolean indicating if file is valid
         - score: Validation score (0-100)
     """
-    
+    print("LOL")
     errors = []
     warnings = []
     info = []
     statistics = {}
-    
     try:
         # Step 1: Basic file validation
         file_stats = _validate_file_basics(file_path)

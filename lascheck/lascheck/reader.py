@@ -281,58 +281,59 @@ def read_file_contents(file_obj, regexp_subs, value_null_subs, ignore_data=False
     sections_after_a_section = False
     v_section_first = False
     blank_line_in_section = False
-    sections_with_blank_line = [] 
+    sections_with_blank_line = {} 
 
     for i, line in enumerate(file_obj):
-        line = line.strip()
-        if not line:
-            if section_exists:
-                blank_line_in_section = True
-                section_with_blank_line = sect_title_line.split()[0]
-                if section_with_blank_line not in sections_with_blank_line:
-                    sections_with_blank_line.append(section_with_blank_line)
-            continue
-        if data_section_read:
-            sections_after_a_section = True
-        elif line.startswith("~"):
-            if section_exists:
-                # We have ended a section and need to start the next
-                if sections.keys().__len__() == 0:
-                    # This is the first section we are adding
-                    if sect_title_line.startswith("~v") or sect_title_line.startswith("~V"):
-                        v_section_first = True
-                if sect_title_line.startswith("~a") or sect_title_line.startswith("~A"):
-                    data_section_read = True
-                sections[sect_title_line] = {
-                    "section_type": "header",
-                    "title": sect_title_line,
-                    "lines": sect_lines,
-                    "line_nos": sect_line_nos,
-                }
+            line = line.strip()
+            if not line:
+                if section_exists:
+                    blank_line_in_section = True
+                    section_with_blank_line = sect_title_line.split()[0]
+                    # Track the line number where the blank line was found
+                    if section_with_blank_line not in sections_with_blank_line:
+                        sections_with_blank_line[section_with_blank_line] = []
+                    sections_with_blank_line[section_with_blank_line].append(i + 1)
+                continue
+            if data_section_read:
+                sections_after_a_section = True
+            elif line.startswith("~"):
+                if section_exists:
+                    # We have ended a section and need to start the next
+                    if sections.keys().__len__() == 0:
+                        # This is the first section we are adding
+                        if sect_title_line.startswith("~v") or sect_title_line.startswith("~V"):
+                            v_section_first = True
+                    if sect_title_line.startswith("~a") or sect_title_line.startswith("~A"):
+                        data_section_read = True
+                    sections[sect_title_line] = {
+                        "section_type": "header",
+                        "title": sect_title_line,
+                        "lines": sect_lines,
+                        "line_nos": sect_line_nos,
+                    }
 
-                sect_lines = []
-                sect_line_nos = []
+                    sect_lines = []
+                    sect_line_nos = []
+                else:
+                    # We are entering into a section for the first time
+                    section_exists = True
+                    pass
+                sect_title_line = line  # either way... this is the case.
+
             else:
-                # We are entering into a section for the first time
-                section_exists = True
-                pass
-            sect_title_line = line  # either way... this is the case.
-
-        else:
-            # We are in the middle of a section.
-            if not line.startswith("#"):  # ignore commented-out lines.. for now.
-                sect_lines.append(line)
-                sect_line_nos.append(i + 1)
+                # We are in the middle of a section.
+                if not line.startswith("#"):  # ignore commented-out lines.. for now.
+                    sect_lines.append(line)
+                    sect_line_nos.append(i + 1)
 
     sections[sect_title_line] = {
-        "section_type": "data",
-        "title": sect_title_line,
-        "line_nos": sect_line_nos,
-        "lines": sect_lines
-    }
+            "section_type": "data",
+            "title": sect_title_line,
+            "line_nos": sect_line_nos,
+            "lines": sect_lines
+        }
 
     return sections, sections_after_a_section, v_section_first, blank_line_in_section, sections_with_blank_line
-
 
 def get_substitutions(read_policy, null_policy):
     """Parse read and null policy definitions into a list of regexp and value

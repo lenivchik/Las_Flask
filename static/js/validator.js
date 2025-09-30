@@ -39,12 +39,12 @@ class LASValidator {
     }
     
     // Export handlers
-    const exportJson = document.getElementById('export-json');
+    // const exportJson = document.getElementById('export-json');
     const exportTxt = document.getElementById('export-txt');
     
-    if (exportJson) {
-      exportJson.addEventListener('click', () => this.exportResults('json'));
-    }
+    // if (exportJson) {
+    //   exportJson.addEventListener('click', () => this.exportResults('json'));
+    // }
     
     if (exportTxt) {
       exportTxt.addEventListener('click', () => this.exportResults('txt'));
@@ -616,12 +616,13 @@ getScoreClass(score) {
     
     let content, filename, mimeType;
     
-    if (format === 'json') {
-      content = JSON.stringify(this.validationResults, null, 2);
-      filename = `validation_${this.currentFile.name}_${Date.now()}.json`;
-      mimeType = 'application/json';
+    // if (format === 'json') {
+    //   content = JSON.stringify(this.validationResults, null, 2);
+    //   filename = `validation_${this.currentFile.name}_${Date.now()}.json`;
+    //   mimeType = 'application/json';
       
-    } else if (format === 'txt') {
+    // } else 
+    if (format === 'txt') {
       content = this.formatResultsAsText(this.validationResults);
       filename = `validation_${this.currentFile.name}_${Date.now()}.txt`;
       mimeType = 'text/plain';

@@ -641,11 +641,18 @@ class LASFile(object):
         # Clear the list to avoid duplicates on multiple calls
         self.warnings = []
         
-        # Blank lines in sections - WARNING
         if (spec.BlankLineInSection.check(self)) is False:
-            unique_sections = list(set(self.sections_with_blank_line))
-            for section in unique_sections:
-                self.warnings.append(tr(f"Section having blank line: {section}"))
+            for section, line_numbers in self.sections_with_blank_line.items():
+                # Format line numbers nicely
+                if len(line_numbers) == 1:
+                    line_str = f"строка - {line_numbers[0]}"
+                else:
+                    line_str = f"строки - {', '.join(map(str, line_numbers))}"
+                
+                self.warnings.append(tr(f"Section having blank line: {section} ({line_str})"))
+
+
+
         
  # Special character checks remain as errors
         if not spec.ValidMnemonicCharacters.check(self):
