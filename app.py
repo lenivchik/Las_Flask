@@ -1,3 +1,4 @@
+import datetime
 from io import StringIO
 from flask import Flask, render_template, request, jsonify
 import lascheck  # модуль, где логика проверки .las файлов
@@ -14,6 +15,8 @@ def home():
 
 @app.route('/validate', methods=['POST'])
 def validate():
+    print(f"LOL1, {datetime.datetime.now()}");
+
     if 'file' not in request.files:
         return jsonify({'error': 'Файл не загружен'}), 400
 

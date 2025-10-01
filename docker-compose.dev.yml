@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  las-validator-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: las-validator-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - FLASK_APP=app.py
+    volumes:
+      # Mount all source code for hot reloading
+      - ./app.py:/app/app.py
+      - ./Test_1.py:/app/Test_1.py
+      - ./Test_2.py:/app/Test_2.py
+      - ./Test_3.py:/app/Test_3.py
+      - ./static:/app/static
+      - ./templates:/app/templates
+      - ./lascheck:/app/lascheck
+    restart: unless-stopped
+    command: ["python", "app.py"]
+    networks:
+      - las-network-dev
+
+networks:
+  las-network-dev:
+    driver: bridge

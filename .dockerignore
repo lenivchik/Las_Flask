@@ -1,41 +1,18 @@
-# Git
-.git
-.gitignore
-README.md
-
-# Docker
-Dockerfile*
-docker-compose*
-.dockerignore
-
 # Python
-__pycache__
-*.pyc
-*.pyo
-*.pyd
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
 .Python
-env
+env/
+venv/
+ENV/
+.venv
 pip-log.txt
 pip-delete-this-directory.txt
-.tox
-.coverage
-.coverage.*
-.pytest_cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git
-.mypy_cache
-.pytest_cache
-.hypothesis
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+.pytest_cache/
+*.egg-info/
+.eggs/
 
 # IDE
 .vscode/
@@ -43,32 +20,36 @@ venv.bak/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
-# Uploads and logs (keep structure but ignore content)
-uploads/*
-!uploads/.gitkeep
-logs/*
-!logs/.gitkeep
+# Project specific
+*.las
+*.txt
+*.log
+*.db
+*.sqlite
 
-# Poetry
-poetry.lock
+# Git
+.git/
+.gitignore
 
-# Development files
-*.dev
-*.local
-.env.local
-.env.development
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
 
-# Don't ignore lascheck if it's a local package (including its pyproject.toml)
-!lascheck/
-!lascheck/pyproject.toml
-!lascheck/poetry.lock
+# Documentation
+*.md
+LICENSE
+docs/
+
+# Testing
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

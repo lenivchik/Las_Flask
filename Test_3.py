@@ -1,3 +1,4 @@
+import datetime
 import lascheck
 from typing import Dict, List, Any, Tuple
 import re
@@ -38,7 +39,6 @@ def validate_las_file_enhanced(file_path: str, **kwargs) -> Dict[str, Any]:
         - valid: Boolean indicating if file is valid
         - score: Validation score (0-100)
     """
-    print("LOL")
     errors = []
     warnings = []
     info = []

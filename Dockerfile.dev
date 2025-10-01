@@ -1,0 +1,40 @@
+# Development Dockerfile with hot-reloading support
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies including curl for healthcheck
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install the lascheck package
+COPY lascheck /app/lascheck
+RUN pip install --no-cache-dir -e ./lascheck
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    flask \
+    debugpy \
+    gunicorn \
+    watchdog
+
+# Copy application files (these will be overridden by volumes in dev)
+COPY app.py Test_1.py Test_2.py Test_3.py ./
+COPY static ./static
+COPY templates ./templates
+
+# Expose ports for Flask and debugger
+EXPOSE 5000 5678
+
+# Set environment variables
+ENV FLASK_APP=app.py
+ENV FLASK_ENV=development
+ENV FLASK_DEBUG=1
+ENV PYTHONUNBUFFERED=1
+
+# Run Flask development server
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--reload"]
