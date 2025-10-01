@@ -2,24 +2,22 @@ version: '3.8'
 
 services:
   las-validator:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile
     container_name: las-validator-app
     ports:
       - "5000:5000"
     environment:
-      - FLASK_APP=app.py
       - FLASK_ENV=production
-      - PYTHONUNBUFFERED=1
+      - FLASK_APP=app.py
     volumes:
-      # Optional: Mount uploads directory for persistence
-      - ./uploads:/app/uploads
-      # Optional: Mount logs directory
-      - ./logs:/app/logs
+      # Mount for development (optional - comment out for production)
+      - ./static:/app/static:ro
+      - ./templates:/app/templates:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -27,13 +25,6 @@ services:
     networks:
       - las-network
 
-
 networks:
   las-network:
     driver: bridge
-
-volumes:
-  uploads:
-    driver: local
-  logs:
-    driver: local

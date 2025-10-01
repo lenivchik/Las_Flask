@@ -1,41 +1,38 @@
-# Minimal working Dockerfile for your specific setup
+# Use Python 3.10 slim image as base
 FROM python:3.10-slim
 
+# Set working directory
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc g++ curl build-essential \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install lascheck (has setup.py, so pip will work)
-COPY lascheck/ ./lascheck/
-RUN pip install -e ./lascheck/
+# Copy the lascheck package first (local package)
+COPY lascheck ./lascheck
 
-# Install Flask app dependencies
-RUN pip install \
-    flask==3.1.2 \
-    gunicorn==21.2.0 \
-    werkzeug==3.1.3 \
-    jinja2==3.1.6 \
-    markupsafe==3.0.2 \
-    click==8.2.1 \
-    blinker==1.9.0 \
-    itsdangerous==2.2.0
+# Copy requirements and project files
 
-# Copy Flask app
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir ./lascheck && \
+    pip install --no-cache-dir flask gunicorn
+
+# Copy the rest of the application
 COPY app.py ./
-COPY templates/ ./templates/
-COPY static/ ./static/
-COPY Test_1.py ./
-COPY Test_2.py ./
+COPY Test_1.py Test_2.py Test_3.py ./
+COPY static ./static
+COPY templates ./templates
 
-# Create directories and user
-RUN mkdir -p uploads && \
-    adduser --disabled-password --gecos '' appuser && \
-    chown -R appuser:appuser /app
-
-USER appuser
+# Expose the port the app runs on
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+# Set environment variables
+ENV FLASK_APP=app.py
+ENV PYTHONUNBUFFERED=1
+
+# Run the application with gunicorn for production
+# Use 4 workers for better performance
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "app:app"]
